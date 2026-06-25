@@ -1,65 +1,88 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * SportLink theme. Built on React Native Paper's MD3 themes, with a sporty
+ * blue primary plus per-pillar accent colors used across the app.
  */
 
 import '@/global.css';
 
-import { Platform } from 'react-native';
+import { DarkTheme as NavDark, DefaultTheme as NavLight } from 'expo-router';
+import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+/** One accent color per pillar so each feature reads at a glance. */
+export const PillarColors = {
+  routes: '#0B6BCB', // blue
+  courts: '#15A66A', // green
+  coach: '#FF6B35', // orange
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export const lightTheme: MD3Theme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: '#0B6BCB',
+    onPrimary: '#FFFFFF',
+    primaryContainer: '#D7E7FF',
+    onPrimaryContainer: '#001C3A',
+    secondary: '#15A66A',
+    tertiary: '#FF6B35',
+    background: '#F6F7F9',
+    surface: '#FFFFFF',
+    surfaceVariant: '#EDEFF3',
+    elevation: {
+      ...MD3LightTheme.colors.elevation,
+      level1: '#FFFFFF',
+      level2: '#FBFCFE',
+    },
+  },
+};
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+export const darkTheme: MD3Theme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#7FB6FF',
+    onPrimary: '#00315F',
+    primaryContainer: '#0C4A8A',
+    onPrimaryContainer: '#D7E7FF',
+    secondary: '#5FD6A0',
+    tertiary: '#FF9466',
+    background: '#0E1116',
+    surface: '#161A21',
+    surfaceVariant: '#1E232B',
   },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+};
+
+/** React Navigation themes kept in sync with Paper so there are no color flashes. */
+export const navLightTheme = {
+  ...NavLight,
+  colors: {
+    ...NavLight.colors,
+    primary: lightTheme.colors.primary,
+    background: lightTheme.colors.background,
+    card: lightTheme.colors.surface,
+    text: lightTheme.colors.onSurface,
+    border: lightTheme.colors.surfaceVariant,
   },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+};
+
+export const navDarkTheme = {
+  ...NavDark,
+  colors: {
+    ...NavDark.colors,
+    primary: darkTheme.colors.primary,
+    background: darkTheme.colors.background,
+    card: darkTheme.colors.surface,
+    text: darkTheme.colors.onSurface,
+    border: darkTheme.colors.surfaceVariant,
   },
-});
+};
 
 export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const MaxContentWidth = 720;
