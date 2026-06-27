@@ -15,6 +15,12 @@ export const PillarColors = {
   coach: '#FF6B35', // orange
 } as const;
 
+/** Per-sport colors used for map pins and court icons. */
+export const SportColors = {
+  basketball: '#FF6B35', // orange
+  tennis: '#15A66A', // green
+} as const;
+
 export const lightTheme: MD3Theme = {
   ...MD3LightTheme,
   colors: {

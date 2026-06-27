@@ -40,7 +40,13 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SportLink uses your location to show nearby courts and running routes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
