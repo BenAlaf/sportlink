@@ -1,13 +1,27 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, Chip, Divider, IconButton, Text, TextInput, useTheme } from 'react-native-paper';
+import {
+  ActivityIndicator,
+  Card,
+  Chip,
+  Divider,
+  IconButton,
+  Snackbar,
+  Text,
+  TextInput,
+  useTheme,
+} from 'react-native-paper';
 
 import { InfoBanner } from '@/components/info-banner';
 import { Screen } from '@/components/screen';
 import { ScreenHeader } from '@/components/screen-header';
 import { PillarColors, Spacing } from '@/constants/theme';
-import { coachSuggestions, sampleTrainingPlan } from '@/data/mock';
+import { coachSuggestions } from '@/data/mock';
+import { askCoach } from '@/lib/coach';
+import { isBackendConfigured } from '@/lib/config';
+import { buildPlan } from '@/lib/planner';
+import { indefiniteArticle } from '@/lib/text';
 import { useAppStore } from '@/store/store';
 
 interface Message {
@@ -16,64 +30,76 @@ interface Message {
   text: string;
 }
 
-/** Placeholder reply logic until the OpenAI Edge Function lands (M4). */
-function cannedReply(question: string, name: string): string {
-  const q = question.toLowerCase();
-  if (q.includes('endurance') || q.includes('stamina')) {
-    return `Build endurance gradually, ${name} — add one longer easy run each week and keep most runs at a pace where you can still talk.`;
-  }
-  if (q.includes('eat') || q.includes('food') || q.includes('nutrition')) {
-    return 'Before a run, aim for a light carb snack 30–60 min ahead (banana, toast). Hydrate, and keep it low-fiber to avoid stomach trouble.';
-  }
-  if (q.includes('knee') || q.includes('injur') || q.includes('pain') || q.includes('sore')) {
-    return "Let's go easier this week: swap one run for tennis or a walk, ice after activity, and stop if pain is sharp. See a physio if it persists.";
-  }
-  return 'Good question! Once the AI coach is connected, I’ll tailor this to your full profile and history. For now, stick to the weekly plan below.';
-}
-
 export default function CoachScreen() {
   const theme = useTheme();
   const { profile } = useAppStore();
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'intro',
-      from: 'coach',
-      text: `Hi ${profile.name}! I’ve put together a plan for a ${profile.fitnessLevel} athlete. Ask me anything about it.`,
-    },
-  ]);
+  const [sending, setSending] = useState(false);
+  const [snack, setSnack] = useState('');
+  const [variant, setVariant] = useState(0);
 
-  function send(text: string) {
+  // Auto-regenerates whenever the profile changes; `variant` lets the user
+  // request a fresh take via the Regenerate button.
+  const plan = useMemo(() => buildPlan(profile, variant), [profile, variant]);
+
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Greeting is derived from the live profile each render, so it tracks name and
+  // fitness-level changes — unlike chat state, which only seeds once on mount.
+  const greeting = `Hi ${profile.name}! I've built a plan for ${indefiniteArticle(
+    profile.fitnessLevel,
+  )} ${profile.fitnessLevel} athlete. Ask me anything about it.`;
+  const thread: Message[] = [{ id: 'intro', from: 'coach', text: greeting }, ...messages];
+
+  function regenerate() {
+    setVariant((v) => v + 1);
+    setSnack('Fresh plan generated');
+  }
+
+  async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    const userMsg: Message = { id: `u-${Date.now()}`, from: 'user', text: trimmed };
-    const coachMsg: Message = {
-      id: `c-${Date.now()}`,
-      from: 'coach',
-      text: cannedReply(trimmed, profile.name),
-    };
-    setMessages((prev) => [...prev, userMsg, coachMsg]);
+    if (!trimmed || sending) return;
+
+    const history = messages.map((m) => ({ from: m.from, text: m.text }));
+    setMessages((prev) => [...prev, { id: `u-${Date.now()}`, from: 'user', text: trimmed }]);
     setInput('');
+    setSending(true);
+
+    const { text: reply } = await askCoach({ question: trimmed, profile, history });
+    setMessages((prev) => [...prev, { id: `c-${Date.now()}`, from: 'coach', text: reply }]);
+    setSending(false);
   }
 
   return (
     <Screen>
       <ScreenHeader title="Coach" subtitle="Your personalized training plan" />
-      <InfoBanner text="Rule-based coach is active. Add an OpenAI key to unlock richer, conversational plans." />
+      <InfoBanner
+        text={
+          isBackendConfigured
+            ? 'AI coach connected — plans and chat are tailored to your profile.'
+            : 'Rule-based coach is active. Add an OpenAI key to unlock richer, conversational plans.'
+        }
+      />
 
       <Card mode="elevated" style={styles.planCard}>
         <Card.Content>
           <View style={styles.planHeader}>
             <MaterialCommunityIcons name="clipboard-text-outline" size={20} color={PillarColors.coach} />
-            <Text variant="titleMedium" style={{ fontWeight: '700' }}>
-              {sampleTrainingPlan.title}
+            <Text variant="titleMedium" style={{ fontWeight: '700', flex: 1 }}>
+              {plan.title}
             </Text>
+            <IconButton
+              icon="refresh"
+              size={20}
+              onPress={regenerate}
+              accessibilityLabel="Regenerate plan"
+            />
           </View>
-          <Text variant="bodyMedium" style={{ opacity: 0.8, marginVertical: Spacing.sm }}>
-            {sampleTrainingPlan.summary}
+          <Text variant="bodyMedium" style={{ opacity: 0.8, marginBottom: Spacing.sm }}>
+            {plan.summary}
           </Text>
           <Divider style={{ marginBottom: Spacing.sm }} />
-          {sampleTrainingPlan.days.map((d) => (
+          {plan.days.map((d) => (
             <View key={d.day} style={styles.dayRow}>
               <View style={[styles.dayChip, { backgroundColor: theme.colors.surfaceVariant }]}>
                 <Text variant="labelSmall" style={{ fontWeight: '700' }}>
@@ -97,7 +123,7 @@ export default function CoachScreen() {
         Ask the coach
       </Text>
 
-      {messages.map((m) => (
+      {thread.map((m) => (
         <View
           key={m.id}
           style={[
@@ -114,9 +140,18 @@ export default function CoachScreen() {
         </View>
       ))}
 
+      {sending && (
+        <View style={[styles.bubble, styles.typing, { backgroundColor: theme.colors.surfaceVariant }]}>
+          <ActivityIndicator size={16} />
+          <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+            Coach is thinking…
+          </Text>
+        </View>
+      )}
+
       <View style={styles.suggestions}>
         {coachSuggestions.map((s) => (
-          <Chip key={s} compact onPress={() => send(s)}>
+          <Chip key={s} compact disabled={sending} onPress={() => send(s)}>
             {s}
           </Chip>
         ))}
@@ -128,9 +163,13 @@ export default function CoachScreen() {
         value={input}
         onChangeText={setInput}
         onSubmitEditing={() => send(input)}
-        right={<TextInput.Icon icon="send" onPress={() => send(input)} />}
+        right={<TextInput.Icon icon="send" disabled={sending} onPress={() => send(input)} />}
         style={{ marginTop: Spacing.sm }}
       />
+
+      <Snackbar visible={!!snack} onDismiss={() => setSnack('')} duration={1800}>
+        {snack}
+      </Snackbar>
     </Screen>
   );
 }
@@ -148,5 +187,6 @@ const styles = StyleSheet.create({
   },
   chatTitle: { fontWeight: '700', marginBottom: Spacing.sm },
   bubble: { maxWidth: '85%', borderRadius: 14, padding: Spacing.sm + 2, marginBottom: Spacing.sm },
+  typing: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, alignSelf: 'flex-start' },
   suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.sm },
 });

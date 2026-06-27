@@ -4,7 +4,7 @@
  * for live sources (Supabase courts, GraphHopper routes, OpenAI plans).
  */
 
-import type { Court, RunRoute, TrainingPlan, UserProfile } from '@/types';
+import type { Court, RunRoute, UserProfile } from '@/types';
 
 /** Demo city center (Tel Aviv) used as the reference point for distances/maps. */
 export const DEMO_CITY = {
@@ -138,21 +138,10 @@ export const mockRoutes: RunRoute[] = [
 /** Target distances offered in the Routes filter. */
 export const ROUTE_DISTANCES = [3, 5, 10] as const;
 
-export const sampleTrainingPlan: TrainingPlan = {
-  title: 'Weekly Base Builder',
-  summary: 'A balanced week mixing easy running, court play and recovery — tuned for an intermediate athlete.',
-  days: [
-    { day: 'Mon', title: 'Easy run', detail: '5 km conversational pace on the Hayarkon Park loop.' },
-    { day: 'Tue', title: 'Basketball', detail: '45 min pickup at Gan Meir — full-court if you can.' },
-    { day: 'Wed', title: 'Rest', detail: 'Active recovery: 20 min walk + mobility.' },
-    { day: 'Thu', title: 'Tempo run', detail: '4 km with the middle 2 km at a comfortably-hard effort.' },
-    { day: 'Fri', title: 'Tennis', detail: '1 hr hitting session at Gordon courts.' },
-    { day: 'Sat', title: 'Long run', detail: '8 km steady along the beach promenade.' },
-    { day: 'Sun', title: 'Rest', detail: 'Full rest or gentle stretching.' },
-  ],
-};
-
-/** Canned coach replies used until the OpenAI Edge Function is wired up (M4). */
+/**
+ * Starter prompts shown as chips on the Coach screen. The plan itself is now
+ * generated from the profile by `@/lib/planner`.
+ */
 export const coachSuggestions = [
   'How do I improve my endurance?',
   'What should I eat before a run?',
