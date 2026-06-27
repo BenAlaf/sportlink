@@ -1,11 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 
 import { Screen } from '@/components/screen';
 import { PillarColors, Spacing } from '@/constants/theme';
-import { mockCourts, mockRoutes, sampleTrainingPlan } from '@/data/mock';
+import { mockCourts, mockRoutes } from '@/data/mock';
+import { buildPlan } from '@/lib/planner';
 import { useAppStore } from '@/store/store';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -51,7 +53,9 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { profile, savedRouteIds } = useAppStore();
 
-  const today = sampleTrainingPlan.days[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  // Same engine as the Coach screen, so the dashboard reflects the live plan.
+  const plan = useMemo(() => buildPlan(profile), [profile]);
+  const today = plan.days[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
 
   const stats = [
     { label: 'Saved routes', value: String(savedRouteIds.length), icon: 'bookmark-outline' as IconName },

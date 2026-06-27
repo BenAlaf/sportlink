@@ -53,4 +53,6 @@ export interface TrainingPlan {
   title: string;
   summary: string;
   days: PlanDay[];
+  /** Where the plan came from — drives the "AI active" UI cues. */
+  source?: 'local' | 'ai';
 }
