@@ -8,7 +8,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import MapView, { Marker, type Region } from 'react-native-maps';
+import MapView, { Marker, Polyline, type Region } from 'react-native-maps';
 
 import type { LatLng } from '@/lib/geo';
 
@@ -26,6 +26,10 @@ interface MapProps {
   selectedId?: string | null;
   /** When set, the map animates to center on this coordinate. */
   focus?: LatLng | null;
+  /** A route loop to draw on the map. */
+  polyline?: { coordinates: LatLng[]; color: string } | null;
+  /** When set, the map zooms to fit these coordinates (e.g. a whole route). */
+  fitCoordinates?: LatLng[] | null;
   onMarkerPress?: (id: string) => void;
   height?: number;
   style?: ViewStyle;
@@ -37,6 +41,8 @@ export function Map({
   markers = [],
   selectedId,
   focus,
+  polyline,
+  fitCoordinates,
   onMarkerPress,
   height,
   style,
@@ -52,6 +58,15 @@ export function Map({
       );
     }
   }, [focus]);
+
+  useEffect(() => {
+    if (fitCoordinates && fitCoordinates.length > 1) {
+      mapRef.current?.fitToCoordinates(fitCoordinates, {
+        edgePadding: { top: 48, right: 48, bottom: 48, left: 48 },
+        animated: true,
+      });
+    }
+  }, [fitCoordinates]);
 
   return (
     <View style={[height !== undefined ? { height } : styles.fill, style]}>
@@ -69,6 +84,13 @@ export function Map({
             onPress={() => onMarkerPress?.(m.id)}
           />
         ))}
+        {polyline ? (
+          <Polyline
+            coordinates={polyline.coordinates}
+            strokeColor={polyline.color}
+            strokeWidth={4}
+          />
+        ) : null}
         {children}
       </MapView>
     </View>

@@ -7,13 +7,14 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { defaultProfile } from '@/data/mock';
-import type { UserProfile } from '@/types';
+import type { GeneratedRoute, UserProfile } from '@/types';
 
 interface AppStore {
   profile: UserProfile;
   setProfile: (profile: UserProfile) => void;
-  savedRouteIds: string[];
-  toggleSavedRoute: (id: string) => void;
+  /** Saved route loops (full objects so they can be redrawn on the map). */
+  savedRoutes: GeneratedRoute[];
+  toggleSavedRoute: (route: GeneratedRoute) => void;
   isRouteSaved: (id: string) => boolean;
   savedCourtIds: string[];
   toggleSavedCourt: (id: string) => void;
@@ -24,18 +25,20 @@ const AppContext = createContext<AppStore | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
-  const [savedRouteIds, setSavedRouteIds] = useState<string[]>([]);
+  const [savedRoutes, setSavedRoutes] = useState<GeneratedRoute[]>([]);
   const [savedCourtIds, setSavedCourtIds] = useState<string[]>([]);
 
-  const toggleSavedRoute = useCallback((id: string) => {
-    setSavedRouteIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+  const toggleSavedRoute = useCallback((route: GeneratedRoute) => {
+    setSavedRoutes((prev) =>
+      prev.some((r) => r.id === route.id)
+        ? prev.filter((r) => r.id !== route.id)
+        : [route, ...prev],
     );
   }, []);
 
   const isRouteSaved = useCallback(
-    (id: string) => savedRouteIds.includes(id),
-    [savedRouteIds],
+    (id: string) => savedRoutes.some((r) => r.id === id),
+    [savedRoutes],
   );
 
   const toggleSavedCourt = useCallback((id: string) => {
@@ -53,7 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       profile,
       setProfile,
-      savedRouteIds,
+      savedRoutes,
       toggleSavedRoute,
       isRouteSaved,
       savedCourtIds,
@@ -62,7 +65,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }),
     [
       profile,
-      savedRouteIds,
+      savedRoutes,
       toggleSavedRoute,
       isRouteSaved,
       savedCourtIds,

@@ -56,3 +56,25 @@ export interface TrainingPlan {
   /** Where the plan came from — drives the "AI active" UI cues. */
   source?: 'local' | 'ai';
 }
+
+/** A geographic coordinate (matches react-native-maps' LatLng shape). */
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
+}
+
+export type Activity = 'run' | 'walk';
+
+/** A generated running/walking loop drawn on the map. */
+export interface GeneratedRoute {
+  id: string;
+  name: string;
+  distanceKm: number;
+  estimatedMinutes: number;
+  ascentM: number;
+  activity: Activity;
+  /** Ordered loop coordinates (first === last). */
+  coordinates: GeoPoint[];
+  /** 'graphhopper' = real road loop; 'local' = synthetic fallback. */
+  source: 'graphhopper' | 'local';
+}

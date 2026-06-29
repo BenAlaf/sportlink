@@ -51,14 +51,14 @@ const PILLARS: Pillar[] = [
 export default function DashboardScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { profile, savedRouteIds } = useAppStore();
+  const { profile, savedRoutes } = useAppStore();
 
   // Same engine as the Coach screen, so the dashboard reflects the live plan.
   const plan = useMemo(() => buildPlan(profile), [profile]);
   const today = plan.days[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
 
   const stats = [
-    { label: 'Saved routes', value: String(savedRouteIds.length), icon: 'bookmark-outline' as IconName },
+    { label: 'Saved routes', value: String(savedRoutes.length), icon: 'bookmark-outline' as IconName },
     { label: 'Courts nearby', value: String(mockCourts.length), icon: 'map-marker-outline' as IconName },
     { label: 'Routes', value: String(mockRoutes.length), icon: 'map-outline' as IconName },
   ];
