@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   Avatar,
@@ -13,6 +13,7 @@ import {
 import { Screen } from '@/components/screen';
 import { ScreenHeader } from '@/components/screen-header';
 import { Spacing } from '@/constants/theme';
+import { useAuth } from '@/store/auth';
 import { useAppStore } from '@/store/store';
 import type { FitnessLevel, SportType } from '@/types';
 
@@ -25,6 +26,7 @@ const WEEKLY_OPTIONS = [2, 3, 4, 5, 6];
 
 export default function ProfileScreen() {
   const { profile, setProfile } = useAppStore();
+  const { user, signOut } = useAuth();
 
   const [name, setName] = useState(profile.name);
   const [level, setLevel] = useState<FitnessLevel>(profile.fitnessLevel);
@@ -32,6 +34,15 @@ export default function ProfileScreen() {
   const [goal, setGoal] = useState(profile.goal);
   const [weekly, setWeekly] = useState(profile.weeklyTarget);
   const [snack, setSnack] = useState(false);
+
+  // Re-sync the form when the profile loads/changes from Supabase.
+  useEffect(() => {
+    setName(profile.name);
+    setLevel(profile.fitnessLevel);
+    setSports(profile.preferredSports);
+    setGoal(profile.goal);
+    setWeekly(profile.weeklyTarget);
+  }, [profile]);
 
   function toggleSport(s: SportType) {
     setSports((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -61,6 +72,11 @@ export default function ProfileScreen() {
           <Text variant="bodySmall" style={{ opacity: 0.7, textTransform: 'capitalize' }}>
             {level} · {weekly} workouts/week
           </Text>
+          {user?.email ? (
+            <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+              {user.email}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -123,6 +139,10 @@ export default function ProfileScreen() {
 
       <Button mode="contained" icon="content-save" onPress={save} style={{ marginTop: Spacing.sm }}>
         Save profile
+      </Button>
+
+      <Button mode="outlined" icon="logout" onPress={signOut} style={{ marginTop: Spacing.sm }}>
+        Sign out
       </Button>
 
       <Snackbar visible={snack} onDismiss={() => setSnack(false)} duration={1800}>
