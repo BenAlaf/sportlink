@@ -50,3 +50,29 @@ alter table public.saved_courts enable row level security;
 
 create policy "saved_courts: own rows" on public.saved_courts
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Courts (shared reference data, seeded from OpenStreetMap) ─────────────────
+-- Public read: courts are shared, not per-user. Only the seed script writes
+-- (using the service_role key, which bypasses RLS).
+create table if not exists public.courts (
+  id text primary key,
+  name text not null,
+  sport text not null,
+  latitude double precision not null,
+  longitude double precision not null,
+  address text not null default '',
+  surface text,
+  lit boolean,
+  free boolean,
+  source text not null default 'osm',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists courts_latitude_idx on public.courts (latitude);
+create index if not exists courts_longitude_idx on public.courts (longitude);
+
+alter table public.courts enable row level security;
+
+drop policy if exists "courts: public read" on public.courts;
+create policy "courts: public read" on public.courts
+  for select using (true);
